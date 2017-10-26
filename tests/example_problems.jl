@@ -11,46 +11,48 @@ using OSQPSolver
 # @pyimport numpy as np
 
 # Simple problem
-# m = 50;
-# n = 100;
-# A  = sparse(randn(m,n));
-# l = -rand(m,1) * 2;
-# u = +rand(m,1) * 2;
-# P = Symmetric(sprand(n,n,0.1));
+# m = 50
+# n = 100
+# A  = sparse(randn(m,n))
+# l = -rand(m,1) * 2
+# u = +rand(m,1) * 2
+# P = Symmetric(sprand(n,n,0.1))
 # P = P + n*speye(n)
 # P = sparse(P)
-# q = randn(n,1);
+# q = randn(n,1)
 # settings = qpSettings(rho=1.0,verbose=true)
-# res = solveOSQP(P,q,A,l,u,settings);
-
+# res = solveOSQP(P,q,A,l,u,settings)
+# nothing;
 
 # Primal infeasible problem
-n = 50;
-m = 500;
-Pt = sprandn(n, n, 0.6);
-P = Pt' * Pt;
-q = randn(n, 1);
-A = sprandn(m, n, 0.8);
-u = 3 + randn(m, 1);
-l = -3 + randn(m, 1);
+# n = 50
+# m = 500
+# Pt = sprandn(n, n, 0.6)
+# P = Pt' * Pt
+# q = randn(n, 1)
+# A = sprandn(m, n, 0.8)
+# u = 3 + randn(m, 1)
+# l = -3 + randn(m, 1)
 
-# # Make random problem primal infeasible
-nhalf = Int64(floor(n/2));
-A[nhalf, :] = A[nhalf + 1, :];
-l[nhalf] = u[nhalf + 1] + 10 * rand();
-u[nhalf] = l[nhalf] + 0.5;
+# # # Make random problem primal infeasible
+# nhalf = Int64(floor(n/2))
+# A[nhalf, :] = A[nhalf + 1, :]
+# l[nhalf] = u[nhalf + 1] + 10 * rand()
+# u[nhalf] = l[nhalf] + 0.5
 
-settings = qpSettings(rho=1.0,verbose=true)
-res = solveOSQP(P,q,A,l,u,settings);
+# settings = qpSettings(rho=1.0,verbose=true)
+# res = solveOSQP(P,q,A,l,u,settings)
+# nothing;
 
 # # Dual infeasible problem
-# P = sparse(diagm([4; 0]));
-# q = [0.0; 2];
-# A = sparse([1.0 1; -1 1]);
-# l = [-Inf; -Inf];
-# u = [2.0; 3];
-# settings = qpSettings(rho=1.0,verbose=true)
-# res = solveOSQP(P,q,A,l,u,settings);
+P = sparse(diagm([4; 0]))
+q = [0.0; 2]
+A = sparse([1.0 1; -1 1])
+l = [-Inf; -Inf]
+u = [2.0; 3]
+settings = qpSettings(rho=1.0,verbose=true)
+res = solveOSQP(P,q,A,l,u,settings)
+nothing
 
 # # Setup and solve the problem
 # # Setup settings

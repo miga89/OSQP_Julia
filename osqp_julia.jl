@@ -143,7 +143,7 @@ export solveOSQP, qpResult, qpSettings, test
           println("Iter:\tObjective:\tPrimal Res:\tDual Res:")
         end
         if mod(iter,100) == 0 || iter == 1 || iter == settings.max_iter
-          printfmt("{1:d}\t{2:.2f}\t\t{3:.4f}\t\t{4:.4f}", iter,cost,r_prim,r_dual)
+          printfmt("{1:d}\t{2:.2f}\t\t{3:.4f}\t\t{4:.4f}\n", iter,cost,r_prim,r_dual)
        end
       end
     #   check primal infeasibility (2-norm or inf-norm?)
