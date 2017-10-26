@@ -201,9 +201,7 @@ export solveOSQP, qpResult, qpSettings, test
     println("\n\n" * "-"^50 * "\nRESULT: \nTotal Iterations: $(iter), Cost: $(round.(cost,2))\nStatus: $(status)\nPrimal Res = $(round.(r_prim,3))\nDual Res = $(round.(r_dual,3))\nRuntime: $(round.(rt,3))s ($(round.(rt*1000,2))ms)\n" * "-"^50 )
 
     # create result object
-    println("end1")
     result = qpResult(xNew,yNew,cost,iter,status,rt);
-    println("end2")
 
     return result;
 
