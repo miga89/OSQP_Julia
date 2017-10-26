@@ -1,5 +1,5 @@
 workspace()
-include("osqp_julia.jl")
+include("../osqp_julia.jl")
 using OSQPSolver
 
 # define example problem
