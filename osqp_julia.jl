@@ -24,7 +24,7 @@ export solveOSQP, qpResult, qpSettings, test
   end
   # Redefinition of the show function that fires when the object is called
   function Base.show(io::IO, obj::qpResult)
-    println(io,"\nRESULT: \nTotal Iterations: $(obj.iter)\nCost: $(round.(obj.cost,2))\nStatus: $(obj.status)\nSolve Time: $(round.(obj.solverTime*1000,2))ms\nx = $(round.(obj.x,3))\ny = $(round.(obj.y,3))" )
+    println(io,"\nRESULT: \nTotal Iterations: $(obj.iter)\nCost: $(round.(obj.cost,2))\nStatus: $(obj.status)\nSolve Time: $(round.(obj.solverTime*1000,2))ms\n\nx = $(round.(obj.x,3))\ny = $(round.(obj.y,3))" )
   end
 
 
@@ -146,45 +146,44 @@ export solveOSQP, qpResult, qpSettings, test
           printfmt("{1:d}\t{2:.2f}\t\t{3:.4f}\t\t{4:.4f}", iter,cost,r_prim,r_dual)
        end
       end
-      # check primal infeasibility (2-norm or inf-norm?)
-    #   norm_δy = norm(δy)
-    #   if norm_δy > ϵ_prim_inf^2
-    #    δy = δy/norm_δy
-    #    # second condition
-    #    if (u'*max(δy,0) + l'*min(δy,0) ) <= - ϵ_prim_inf
-    #     # first condition
-    #     # FIXME: isnt there a *norm(δy) missing?
-    #     if norm(A'*δy) <= ϵ_prim_inf
-    #       status = "primal infeasible"
-    #       cost = Inf
-    #       xNew = NaN*ones(n,1)
-    #       yNew = NaN*ones(m,1)
-    #       break
-    #     end
-    #   end
-    # end
+    #   check primal infeasibility (2-norm or inf-norm?)
+      norm_δy = norm(δy)
+      if norm_δy > ϵ_prim_inf^2
+       δy = δy/norm_δy
+       # second condition
+       if (u'*max.(δy,0) + l'*min.(δy,0) )[1] <= - ϵ_prim_inf
+        # first condition
+        # FIXME: isnt there a *norm(δy) missing?
+        if norm(A'*δy) <= ϵ_prim_inf
+          status = "primal infeasible"
+          cost = Inf
+          xNew = NaN*ones(n,1)
+          yNew = NaN*ones(m,1)
+          break
+        end
+      end
+    end
 
     # #check dual infeasibility
-    # norm_δx = norm(δx)
-    # if norm_δx > ϵ_dual_inf^2
-    #   δx = δx/norm_δx
-    #   if q'*δx < - ϵ_dual_inf
-    #     if norm(P*δx) < ϵ_dual_inf
-    #       Aδx = A * δx
-
-    #       for i = 1:m
-    #           if (u[i] < 1e18) && (Aδx[i] > ϵ_dual_inf) || (l[i] > -1e18) && (Aδx[i] < - ϵ_dual_inf)
-    #             break
-    #           end
-    #       end
-    #       status = "dual infeasible"
-    #       cost = -Inf
-    #       xNew = NaN*ones(n,1)
-    #       yNew = NaN*ones(m,1)
-    #       break
-    #     end
-    #   end
-    # end
+    norm_δx = norm(δx)
+    if norm_δx > ϵ_dual_inf^2
+      δx = δx/norm_δx
+      if (q'*δx)[1] < - ϵ_dual_inf
+        if norm(P*δx) < ϵ_dual_inf
+          Aδx = A * δx
+          for i = 1:m
+              if (u[i] < 1e18) && (Aδx[i] > ϵ_dual_inf) || (l[i] > -1e18) && (Aδx[i] < - ϵ_dual_inf)
+                break
+              end
+          end
+          status = "dual infeasible"
+          cost = -Inf
+          xNew = NaN*ones(n,1)
+          yNew = NaN*ones(m,1)
+          break
+        end
+      end
+    end
 
 
 
@@ -199,10 +198,12 @@ export solveOSQP, qpResult, qpSettings, test
 
     # print solution to screen
     rt = toq()
-    println("\n\n" * "-"^50 * "\nRESULT: \nTotal Iterations: $(iter), Cost: $(round.(cost,2))\nPrimal Res = $(round.(r_prim,3))\nDual Res = $(round.(r_dual,3))\nRuntime: $(round.(rt,3))s ($(round.(rt*1000,2))ms)\n" * "-"^50 )
+    println("\n\n" * "-"^50 * "\nRESULT: \nTotal Iterations: $(iter), Cost: $(round.(cost,2))\nStatus: $(status)\nPrimal Res = $(round.(r_prim,3))\nDual Res = $(round.(r_dual,3))\nRuntime: $(round.(rt,3))s ($(round.(rt*1000,2))ms)\n" * "-"^50 )
 
     # create result object
+    println("end1")
     result = qpResult(xNew,yNew,cost,iter,status,rt);
+    println("end2")
 
     return result;
 

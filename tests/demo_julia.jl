@@ -11,4 +11,5 @@ u = [1.0;0.7;0.7]
 settings = qpSettings(rho=1.0,verbose=true)
 
 # solve QP problem
-res = solveOSQP(P,q,A,l,u,settings)
+solveOSQP(P,q,A,l,u,settings)
+println("end3")

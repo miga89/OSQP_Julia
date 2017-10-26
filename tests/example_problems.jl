@@ -1,55 +1,56 @@
-workspace()
+ workspace()
 
-# include pure julia osqp solver
+# # include pure julia osqp solver
 include("../osqp_julia.jl")
 using OSQPSolver
 
-# include python interface for native osqp solver
-using PyCall
-@pyimport osqp as osqp
-@pyimport scipy.sparse as spar
-@pyimport numpy as np
+# # include python interface for native osqp solver
+# using PyCall
+# @pyimport osqp as osqp
+# @pyimport scipy.sparse as spar
+# @pyimport numpy as np
 
 # Simple problem
-m = 50;
-n = 100;
-A  = sparse(randn(m,n));
-l = -rand(m,1) * 2;
-u = +rand(m,1) * 2;
-P = Symmetric(sprand(n,n,0.1));
-P = P + n*speye(n)
-P = sparse(P)
-q = randn(n,1);
-settings = qpSettings(rho=1.0,verbose=true)
+# m = 50;
+# n = 100;
+# A  = sparse(randn(m,n));
+# l = -rand(m,1) * 2;
+# u = +rand(m,1) * 2;
+# P = Symmetric(sprand(n,n,0.1));
+# P = P + n*speye(n)
+# P = sparse(P)
+# q = randn(n,1);
+# settings = qpSettings(rho=1.0,verbose=true)
+# res = solveOSQP(P,q,A,l,u,settings);
 
-res = solveOSQP(P,q,A,l,u,settings);
 
-
-# # Primal infeasible problem
-# rng(4)
-# n = 50;
-# m = 500;
-# Pt = sprandn(n, n, 0.6);
-# problem.P = Pt' * Pt;
-# problem.q = randn(n, 1);
-# problem.A = sprandn(m, n, 0.8);
-# problem.u = 3 + randn(m, 1);
-# problem.l = -3 + randn(m, 1);
+# Primal infeasible problem
+n = 50;
+m = 500;
+Pt = sprandn(n, n, 0.6);
+P = Pt' * Pt;
+q = randn(n, 1);
+A = sprandn(m, n, 0.8);
+u = 3 + randn(m, 1);
+l = -3 + randn(m, 1);
 
 # # Make random problem primal infeasible
-# nhalf = floor(n/2);
-# problem.A(nhalf, :) = problem.A(nhalf + 1, :);
-# problem.l(nhalf) = problem.u(nhalf + 1) + 10 * rand();
-# problem.u(nhalf) = problem.l(nhalf) + 0.5;
+nhalf = Int64(floor(n/2));
+A[nhalf, :] = A[nhalf + 1, :];
+l[nhalf] = u[nhalf + 1] + 10 * rand();
+u[nhalf] = l[nhalf] + 0.5;
 
+settings = qpSettings(rho=1.0,verbose=true)
+res = solveOSQP(P,q,A,l,u,settings);
 
 # # Dual infeasible problem
-# problem.P = sparse(diag([4; 0]));
-# problem.q = [0; 2];
-# problem.A = sparse([1 1; -1 1]);
-# problem.l = [-Inf; -Inf];
-# problem.u = [2; 3];
-
+# P = sparse(diagm([4; 0]));
+# q = [0.0; 2];
+# A = sparse([1.0 1; -1 1]);
+# l = [-Inf; -Inf];
+# u = [2.0; 3];
+# settings = qpSettings(rho=1.0,verbose=true)
+# res = solveOSQP(P,q,A,l,u,settings);
 
 # # Setup and solve the problem
 # # Setup settings
