@@ -42,7 +42,7 @@ export solveOSQP, qpResult, qpSettings, test
 
 # SOLVER ROUTINE
 # -------------------------------------
-  function solveOSQP(P::Array{Float64},q::Array{Float64},A::Array{Float64},l::Array{Float64},u::Array{Float64},settings::qpSettings)
+  function solveOSQP(P,q::Array{Float64},A,l::Array{Float64},u::Array{Float64},settings::qpSettings)
 
     #Load algorithm settings
     σ = settings.sigma
@@ -188,7 +188,7 @@ export solveOSQP, qpResult, qpSettings, test
 
     # print solution to screen
     rt = toq()
-    println("\n\n" * "-"^50 * "\nRESULT: \nTotal Iterations: $(iter), Cost: $(cost), x: $(xNew), y: $(yNew),\nPrimal Res: $(r_prim), Dual Res: $(r_dual)\nRuntime: $(rt)s ( $(rt*1000)ms)\n" * "-"^50 )
+    println("\n\n" * "-"^50 * "\nRESULT: \nTotal Iterations: $(iter), Cost: $(round.(cost,2))\nPrimal Res = $(round.(r_prim,3))\nDual Res = $(round.(r_dual,3))\nRuntime: $(round.(rt,3))s ($(round.(rt*1000,2))ms)\n" * "-"^50 )
 
     # create result object
     result = qpResult(xNew,yNew,cost,iter);
