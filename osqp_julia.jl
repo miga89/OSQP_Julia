@@ -19,7 +19,14 @@ export solveOSQP, qpResult, qpSettings, test
     y::Array{Float64}
     cost::Float64
     iter::Int64
+    status::String
+    solverTime::Float64
   end
+  # Redefinition of the show function that fires when the object is called
+  function Base.show(io::IO, obj::qpResult)
+    println(io,"\nRESULT: \nTotal Iterations: $(obj.iter)\nCost: $(round.(obj.cost,2))\nStatus: $(obj.status)\nSolve Time: $(round.(obj.solverTime*1000,2))ms\nx = $(round.(obj.x,3))\ny = $(round.(obj.y,3))" )
+  end
+
 
   type qpSettings
     rho::Float64
@@ -55,6 +62,7 @@ export solveOSQP, qpResult, qpSettings, test
 
     # instantiate variables
     iter = 0
+    status = "unsolved"
     r_prim = 100
     r_dual = 100
 
@@ -147,6 +155,7 @@ export solveOSQP, qpResult, qpSettings, test
     #     # first condition
     #     # FIXME: isnt there a *norm(δy) missing?
     #     if norm(A'*δy) <= ϵ_prim_inf
+    #       status = "primal infeasible"
     #       cost = Inf
     #       xNew = NaN*ones(n,1)
     #       yNew = NaN*ones(m,1)
@@ -168,6 +177,7 @@ export solveOSQP, qpResult, qpSettings, test
     #             break
     #           end
     #       end
+    #       status = "dual infeasible"
     #       cost = -Inf
     #       xNew = NaN*ones(n,1)
     #       yNew = NaN*ones(m,1)
@@ -182,6 +192,7 @@ export solveOSQP, qpResult, qpSettings, test
       ϵ_pri = ϵ_abs *sqrt(m) + ϵ_rel * norm(zNew)
       ϵ_dual = ϵ_abs *sqrt(n) + ϵ_rel * ρ * norm(A'*yNew)
       if ( r_prim < ϵ_pri && r_dual < ϵ_dual  )
+        status = "solved"
         break
       end
     end
@@ -191,7 +202,7 @@ export solveOSQP, qpResult, qpSettings, test
     println("\n\n" * "-"^50 * "\nRESULT: \nTotal Iterations: $(iter), Cost: $(round.(cost,2))\nPrimal Res = $(round.(r_prim,3))\nDual Res = $(round.(r_dual,3))\nRuntime: $(round.(rt,3))s ($(round.(rt*1000,2))ms)\n" * "-"^50 )
 
     # create result object
-    result = qpResult(xNew,yNew,cost,iter);
+    result = qpResult(xNew,yNew,cost,iter,status,rt);
 
     return result;
 
