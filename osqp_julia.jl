@@ -142,19 +142,19 @@ export solveOSQP, qpResult, qpSettings, test
         if iter == 1
           println("Iter:\tObjective:\tPrimal Res:\tDual Res:")
         end
-        if mod(iter,100) == 0 || iter == 1 || iter == settings.max_iter
-          printfmt("{1:d}\t{2:.2f}\t\t{3:.4f}\t\t{4:.4f}\n", iter,cost,r_prim,r_dual)
+        if mod(iter,100) == 0 || iter == 1 || iter == 2 || iter == settings.max_iter
+          printfmt("{1:d}\t{2:.4e}\t{3:.4e}\t{4:.4e}\n", iter,cost,r_prim,r_dual)
        end
       end
     #   check primal infeasibility (2-norm or inf-norm?)
-      norm_δy = norm(δy)
+      norm_δy = norm(δy,Inf)
       if norm_δy > ϵ_prim_inf^2
        δy = δy/norm_δy
        # second condition
        if (u'*max.(δy,0) + l'*min.(δy,0) )[1] <= - ϵ_prim_inf
         # first condition
         # FIXME: isnt there a *norm(δy) missing?
-        if norm(A'*δy) <= ϵ_prim_inf
+        if norm(A'*δy,Inf) <= ϵ_prim_inf
           status = "primal infeasible"
           cost = Inf
           xNew = NaN*ones(n,1)
@@ -165,11 +165,11 @@ export solveOSQP, qpResult, qpSettings, test
     end
 
     # #check dual infeasibility
-    norm_δx = norm(δx)
+    norm_δx = norm(δx,Inf)
     if norm_δx > ϵ_dual_inf^2
       δx = δx/norm_δx
       if (q'*δx)[1] < - ϵ_dual_inf
-        if norm(P*δx) < ϵ_dual_inf
+        if norm(P*δx,Inf) < ϵ_dual_inf
           Aδx = A * δx
           for i = 1:m
               if (u[i] < 1e18) && (Aδx[i] > ϵ_dual_inf) || (l[i] > -1e18) && (Aδx[i] < - ϵ_dual_inf)
@@ -188,9 +188,13 @@ export solveOSQP, qpResult, qpSettings, test
 
 
       # check convergence with residuals
-      ϵ_pri = ϵ_abs *sqrt(m) + ϵ_rel * norm(zNew)
-      ϵ_dual = ϵ_abs *sqrt(n) + ϵ_rel * ρ * norm(A'*yNew)
-      if ( r_prim < ϵ_pri && r_dual < ϵ_dual  )
+      #ϵ_pri = ϵ_abs *sqrt(m) + ϵ_rel * norm(zNew)
+      #ϵ_dual = ϵ_abs *sqrt(n) + ϵ_rel * ρ * norm(A'*yNew)
+      #if ( r_prim < ϵ_pri && r_dual < ϵ_dual  )
+      if ( r_prim < ϵ_prim_inf && r_dual < ϵ_dual_inf  )
+        if settings.verbose
+          printfmt("{1:d}\t{2:.4e}\t{3:.4e}\t{4:.4e}\n", iter,cost,r_prim,r_dual)
+        end
         status = "solved"
         break
       end
@@ -198,7 +202,7 @@ export solveOSQP, qpResult, qpSettings, test
 
     # print solution to screen
     rt = toq()
-    println("\n\n" * "-"^50 * "\nRESULT: \nTotal Iterations: $(iter), Cost: $(round.(cost,2))\nStatus: $(status)\nPrimal Res = $(round.(r_prim,3))\nDual Res = $(round.(r_dual,3))\nRuntime: $(round.(rt,3))s ($(round.(rt*1000,2))ms)\n" * "-"^50 )
+    println("\n\n" * "-"^50 * "\nRESULT: Status: $(status)\nTotal Iterations: $(iter)\nOptimal objective: $(round.(cost,4))\nRuntime: $(round.(rt,3))s ($(round.(rt*1000,2))ms)\n" * "-"^50 )
 
     # create result object
     result = qpResult(xNew,yNew,cost,iter,status,rt);
