@@ -129,8 +129,8 @@ export solveOSQP, qpResult, qpSettings, test
       cost = (1/2 * xNew'*P*xNew + q'*xNew)[1]
 
       # compute residuals to check for termination condition
-      r_prim = norm(A*xNew - zNew)
-      r_dual = norm(P*xNew + q + A'*yNew)
+      r_prim = norm(A*xNew - zNew,Inf)
+      r_dual = norm(P*xNew + q + A'*yNew,Inf)
 
       # compute deltas
       δx = xNew - xPrev
@@ -146,15 +146,16 @@ export solveOSQP, qpResult, qpSettings, test
           printfmt("{1:d}\t{2:.4e}\t{3:.4e}\t{4:.4e}\n", iter,cost,r_prim,r_dual)
        end
       end
-    #   check primal infeasibility (2-norm or inf-norm?)
+
+    #   check primal infeasibility TODO:(2-norm or inf-norm?)
       norm_δy = norm(δy,Inf)
-      if norm_δy > ϵ_prim_inf^2
+      if norm_δy > ϵ_prim_inf
        δy = δy/norm_δy
        # second condition
-       if (u'*max.(δy,0) + l'*min.(δy,0) )[1] <= - ϵ_prim_inf
+       if (u'*max.(δy,0) + l'*min.(δy,0) )[1] <= - ϵ_prim_inf*norm_δy
         # first condition
         # FIXME: isnt there a *norm(δy) missing?
-        if norm(A'*δy,Inf) <= ϵ_prim_inf
+        if norm(A'*δy,Inf) <= ϵ_prim_inf*norm_δy
           status = "primal infeasible"
           cost = Inf
           xNew = NaN*ones(n,1)
@@ -166,13 +167,13 @@ export solveOSQP, qpResult, qpSettings, test
 
     # #check dual infeasibility
     norm_δx = norm(δx,Inf)
-    if norm_δx > ϵ_dual_inf^2
-      δx = δx/norm_δx
-      if (q'*δx)[1] < - ϵ_dual_inf
-        if norm(P*δx,Inf) < ϵ_dual_inf
+    if norm_δx > ϵ_dual_inf
+      if (q'*δx)[1] < - ϵ_dual_inf*norm_δx
+        if norm(P*δx,Inf) < ϵ_dual_inf*norm_δx
           Aδx = A * δx
+          # TODO: For loop useless, b/c break only breakes the first for-loop
           for i = 1:m
-              if (u[i] < 1e18) && (Aδx[i] > ϵ_dual_inf) || (l[i] > -1e18) && (Aδx[i] < - ϵ_dual_inf)
+              if ( (u[i] < 1e18) && (Aδx[i] > ϵ_dual_inf*norm_δx) )|| ( (l[i] > -1e18) && (Aδx[i] < - ϵ_dual_inf*norm_δx) )
                 break
               end
           end
@@ -180,7 +181,7 @@ export solveOSQP, qpResult, qpSettings, test
           cost = -Inf
           xNew = NaN*ones(n,1)
           yNew = NaN*ones(m,1)
-          break
+          break #breakes the main-iteration-loop
         end
       end
     end
@@ -188,10 +189,10 @@ export solveOSQP, qpResult, qpSettings, test
 
 
       # check convergence with residuals
-      #ϵ_pri = ϵ_abs *sqrt(m) + ϵ_rel * norm(zNew)
-      #ϵ_dual = ϵ_abs *sqrt(n) + ϵ_rel * ρ * norm(A'*yNew)
-      #if ( r_prim < ϵ_pri && r_dual < ϵ_dual  )
-      if ( r_prim < ϵ_prim_inf && r_dual < ϵ_dual_inf  )
+      # TODO: What's the right convergence criterium?
+      ϵ_prim = ϵ_abs + ϵ_rel * max(norm(A*xNew,Inf), norm(zNew,Inf) )
+      ϵ_dual = ϵ_abs + ϵ_rel * max(norm(P*xNew,Inf), norm(A'*yNew,Inf), norm(q,Inf) )
+      if ( r_prim < ϵ_prim && r_dual < ϵ_dual  )
         if settings.verbose
           printfmt("{1:d}\t{2:.4e}\t{3:.4e}\t{4:.4e}\n", iter,cost,r_prim,r_dual)
         end
