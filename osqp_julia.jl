@@ -45,7 +45,40 @@ export solveOSQP, qpResult, qpSettings, test
     end
   end
 
+  function isPrimalInfeasible(δy::Array{Float64},A,l::Array{Float64},u::Array{Float64},ϵ_prim_inf::Float64)
+    norm_δy = norm(δy,Inf)
+    if norm_δy > ϵ_prim_inf
+      δy = δy/norm_δy
+      # second condition
+      if (u'*max.(δy,0) + l'*min.(δy,0) )[1] <= - ϵ_prim_inf*norm_δy
+        # first condition
+          if norm(A'*δy,Inf) <= ϵ_prim_inf*norm_δy
+           return true
+          end
+        end
+      end
+      return false
+  end
 
+
+  function isDualInfeasible(δx::Array{Float64},P,A,q::Array{Float64},l::Array{Float64},u::Array{Float64},ϵ_dual_inf::Float64)
+    norm_δx = norm(δx,Inf)
+    m = size(A,1)
+    if norm_δx > ϵ_dual_inf
+      if (q'*δx)[1] < - ϵ_dual_inf*norm_δx
+        if norm(P*δx,Inf) < ϵ_dual_inf*norm_δx
+          Aδx = A * δx
+          for i = 1:m
+            if ( (u[i] < 1e18) && (Aδx[i] > ϵ_dual_inf*norm_δx) ) || ( (l[i] > -1e18) && (Aδx[i] < - ϵ_dual_inf*norm_δx) )
+              return false
+            end
+          end
+          return true
+        end
+      end
+    end
+    return false
+  end
 
 # SOLVER ROUTINE
 # -------------------------------------
@@ -147,49 +180,23 @@ export solveOSQP, qpResult, qpSettings, test
        end
       end
 
-    #   check primal infeasibility TODO:(2-norm or inf-norm?)
-      norm_δy = norm(δy,Inf)
-      if norm_δy > ϵ_prim_inf
-       δy = δy/norm_δy
-       # second condition
-       if (u'*max.(δy,0) + l'*min.(δy,0) )[1] <= - ϵ_prim_inf*norm_δy
-        # first condition
-        # FIXME: isnt there a *norm(δy) missing?
-        if norm(A'*δy,Inf) <= ϵ_prim_inf*norm_δy
+      if isPrimalInfeasible(δy,A,l,u,ϵ_prim_inf)
           status = "primal infeasible"
           cost = Inf
           xNew = NaN*ones(n,1)
           yNew = NaN*ones(m,1)
           break
-        end
       end
-    end
 
-    # #check dual infeasibility
-    norm_δx = norm(δx,Inf)
-    if norm_δx > ϵ_dual_inf
-      if (q'*δx)[1] < - ϵ_dual_inf*norm_δx
-        if norm(P*δx,Inf) < ϵ_dual_inf*norm_δx
-          Aδx = A * δx
-          # TODO: For loop useless, b/c break only breakes the first for-loop
-          for i = 1:m
-              if ( (u[i] < 1e18) && (Aδx[i] > ϵ_dual_inf*norm_δx) )|| ( (l[i] > -1e18) && (Aδx[i] < - ϵ_dual_inf*norm_δx) )
-                break
-              end
-          end
+      if isDualInfeasible(δx,P,A,q,l,u,ϵ_dual_inf)
           status = "dual infeasible"
           cost = -Inf
           xNew = NaN*ones(n,1)
           yNew = NaN*ones(m,1)
-          break #breakes the main-iteration-loop
-        end
+          break
       end
-    end
-
-
 
       # check convergence with residuals
-      # TODO: What's the right convergence criterium?
       ϵ_prim = ϵ_abs + ϵ_rel * max(norm(A*xNew,Inf), norm(zNew,Inf) )
       ϵ_dual = ϵ_abs + ϵ_rel * max(norm(P*xNew,Inf), norm(A'*yNew,Inf), norm(q,Inf) )
       if ( r_prim < ϵ_prim && r_dual < ϵ_dual  )
